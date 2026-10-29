@@ -1,81 +1,79 @@
 # LZ1AQ Loop Controller 🕹️
 
-I wanted to build a fully remotable LZ1AQ Active Antenna controller with off the shelf components. It is very cheap to buy ESP8266 MCUs and multi-channel relay boards online. Why reinvent the wheel? This project can be easily adapted to control remote antenna switches and other devices that can be controlled with relays.
+Controller for the LZ1AQ Active Antenna Kit — adapted for the **WT32-ETH01 / WT32-ETH02** (ESP32 + wired Ethernet) by [PE5JW](https://github.com/pe5jw).
+
+Original project by [VE2HEW / Anthony DiIorio](https://github.com/anthonydiiorio/LZ1AQ-Loop-Controller).
+
+Instead of WiFi this version uses the **wired Ethernet** port built into the WT32-ETH01/02, making it reliable for outdoor or shack use where WiFi signal may be poor. The web interface and relay logic are identical to the original.
 
 ![](images/screenshot.png)
 
-![](images/controller-1.jpg)
+## Hardware
 
-![](images/controller-2.jpg)
+| Part | Description | QTY |
+|---|---|---|
+| WT32-ETH01 or WT32-ETH02 | ESP32 + LAN8720A Ethernet module | 1 |
+| — | 4-channel relay module (Active LOW) | 1 |
+| — | 5 V power supply (≥ 500 mA) | 1 |
+| — | RJ45 patch cable | 1 |
+| — | Hookup / Dupont wire | — |
 
-![](images/controller-3.jpg)
+### GPIO pin mapping (relay board → WT32-ETH01)
+
+| Relay | Function | GPIO |
+|---|---|---|
+| Relay 1 | Loop A (NC wired) | IO32 |
+| Relay 2 | Loop B | IO33 |
+| Relay 3 | Vertical | IO4 |
+| Relay 4 | Auxiliary (e.g. Power Supply) | IO15 |
+
+> **Note:** The WT32-ETH01 uses several GPIO pins internally for the LAN8720A PHY
+> (0, 1, 2, 3, 5, 16, 17, 18, 19, 23, 25, 26, 27). Do **not** use these for the relay board.
 
 ## Installation
 
-- Install ESP8266 in the Board Manager: [ESP8266](https://github.com/esp8266/Arduino)
-    - Add the [board URL](https://github.com/esp8266/Arduino#installing-with-boards-manager) in the Preferences window
-    - Search and install `esp8266` in the Board Manager
-- Install [WiFiManager](https://github.com/tzapu/WiFiManager)
- Library 
-   - Search for `WiFiManager` in the Library Manager
-- Select Board
-   - Tools > Board > esp8266 > Select your board
-- Flash Board
-   - Connect your board and select the COM port
-   - Upload the sketch
-   
-## Wifi Config
+1. Install the **ESP32 Arduino core** (v2.x or higher):  
+   <https://github.com/espressif/arduino-esp32>  
+   Add the board URL in Arduino IDE → Preferences, then install `esp32` in the Board Manager.
 
-For WiFi setup, connect to SSID `LoopController`, the password is `loopconfig`
+2. No extra libraries needed — `ETH`, `WebServer` and `ESPmDNS` are all included in the ESP32 core.
+
+3. Select board:  
+   **Tools → Board → ESP32 Arduino → WT32-ETH01 Ethernet Module**  
+   (If not listed, choose "ESP32 Dev Module".)
+
+4. Connect your board, select the COM port and upload the sketch.
+
+## Configuration
+
+At the top of `LZ1AQ-Loop-Controller.ino` you can change:
+
+```cpp
+bool auxEnable = true;            // show 4th relay button in the UI
+bool auxNC     = true;            // Normally Closed wiring (inverts button colour)
+const char *auxLabel = "Power Supply";  // button label
+```
+
+GPIO pins are defined further down — change them if your relay board is wired differently.
 
 ## Usage
 
-Navigate to http://loopcontroller.local/
+1. Connect the WT32-ETH01 to your network with an Ethernet cable.
+2. Open a browser and navigate to **http://loopcontroller.local/**  
+   (or use the IP address printed on the Serial Monitor at 115200 baud).
+3. Select the antenna mode — Loop A, Loop B, A+B or Vertical.
 
-### Auxiliary Relay
+The IP address is also shown at the bottom of the web page.
 
-![Aux relay](images/aux-relay.png)
+## LZ1AQ switching truth table
 
-Relay 4 connects to pin D1 (GPIO 5)  
-You can enable the 4th relay by setting `bool auxEnable = true;`  
-You can invert the button color for normally closed by setting `bool auxNC = true;`  
-You can set the button label by changing `const char *auxLabel = "Relay 4";`
+| Relay 1 | Relay 2 | Relay 3 | Mode     |
+|:-------:|:-------:|:-------:|----------|
+| 1       | 0       | 0       | Loop A   |
+| 0       | 1       | 0       | Loop B   |
+| 1       | 1       | 0       | A + B    |
+| 0       | 0       | 1       | Vertical |
 
-I have mine set to power off the loop remotely wired in the normally closed position.
+> Relay 1 is wired **Normally Closed** so the antenna defaults to Loop A with no power applied.
 
-For additional relays I suggest using a project like [Tasmota](https://tasmota.github.io/docs/).
-
-## Wiring
-
-![Wiring Diagram](images/schematic.png)
-
-## Bill of Materials
-
-| Part Number | Description | QTY |
-|---|---|---|
-| ESP8266 | ESP8266 Board | 1 |
-| N/A | 4 Channel Relay Module (Active Low) | 1 |
-| RM2055M | Hammond Enclosure (50 mm x 140 mm x 190 mm) | 1 |
-| HC-6 | Adhesive PCB Supports | 8 |
-| BK/HTB-24M-R | Fuse Holder 5mm x 20mm	| 1 |
-| 5MF 300-R	| Fuse 300 mA 5mm x 20mm| 10 |
-| N/A | DC Connector of your choice | 1 |
-| N/A |Panel Mount Micro USB Extension | 1 |
-| PGSD-8 | Cable Grommet | 1 |
-| N/A | Hookup Wire | |
-| N/A | Dupont Jumpers Wires | |
-
-I used PC Motherboard standoffs and screws to rest the power inserter in the enclosure. It is not mounted permanently to allow easy removal of the front panel.
-
-## LZ1AQ Documentation
-
-1 0 0 Loop A  
-0 1 0 Loop B  
-1 1 0 A + B  
-0 0 1 Vertical  
-
-**Note: My code has pin 1 inverted so Loop A is in the Normally Closed position. This allows the loop to function in A mode with no power applied to the MCU or relay board.**
-
-![](http://active-antenna.eu/wp-content/uploads/2014/03/digital-control-aaa-faq.jpg)
-
-[LZ1AQ FAQ: Can the antenna switching be performed digitally?](http://active-antenna.eu/amplifier-kit/faq-aaa-1b/#antenna-swith)
+[LZ1AQ FAQ – digital antenna switching](http://active-antenna.eu/amplifier-kit/faq-aaa-1b/#antenna-swith)
