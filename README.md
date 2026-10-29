@@ -6,7 +6,11 @@ Original project by [VE2HEW / Anthony DiIorio](https://github.com/anthonydiiorio
 
 Instead of WiFi this version uses the **wired Ethernet** port built into the WT32-ETH01/02, making it reliable for outdoor or shack use where WiFi signal may be poor. The web interface and relay logic are identical to the original.
 
-![](images/screenshot.png)
+![Web interface screenshot](images/screenshot.png)
+
+## Wiring diagram
+
+![WT32-ETH01 wiring diagram](images/schematic-wt32.png)
 
 ## Hardware
 
